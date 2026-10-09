@@ -1,0 +1,6 @@
+// P3: Daily activity per agent
+// Conversations, prompts and active users per agent per day. A quick adoption view for a PoC read-out.
+AgentTraces(14d)
+| summarize Conversations = dcount(ConversationId), Prompts = countif(Direction == "Prompt"), ActiveUsers = dcount(User)
+            by Day = bin(timestamp, 1d), Source, Agent
+| order by Day desc, Prompts desc

@@ -1,0 +1,6 @@
+// T9: New tools seen recently
+// Tools that appeared for the first time in the last 2 days. Useful after releases, to confirm a new tool is actually being used.
+AgentToolCalls(30d)
+| summarize FirstSeen = min(timestamp), Calls = count() by Agent, Tool
+| where FirstSeen > ago(2d)
+| order by FirstSeen desc

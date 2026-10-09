@@ -1,0 +1,7 @@
+// K7: Input versus output tokens
+// The share of input tokens per agent and model. Cost is usually dominated by input (instructions, history, tool results). A high input share means trimming context saves more than shortening answers.
+AgentTokens(7d)
+| summarize InputTokens = sum(InputTokens), OutputTokens = sum(OutputTokens), ModelCalls = count() by Agent, Model
+| extend InputSharePct = round(100.0 * InputTokens / (InputTokens + OutputTokens), 1),
+         AvgInputPerCall = round(1.0 * InputTokens / ModelCalls), AvgOutputPerCall = round(1.0 * OutputTokens / ModelCalls)
+| order by InputTokens desc

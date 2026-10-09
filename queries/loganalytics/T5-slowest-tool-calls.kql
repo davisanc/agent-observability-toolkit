@@ -1,0 +1,5 @@
+// T5: Slowest tool calls
+// The 25 slowest calls in the last 7 days, with the tool, agent and conversation to pivot into P2.
+AgentToolCalls(7d)
+| top 25 by DurationMs desc
+| project timestamp, Agent, Tool, DurationMs = round(DurationMs), Succeeded, ConversationId, User

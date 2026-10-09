@@ -1,0 +1,6 @@
+// K2: Estimated cost per agent and day
+// Tokens priced with your price table in AgentCost. UnpricedCalls counts model calls whose model is not in the table, so you know when a number is incomplete.
+AgentCost(30d)
+| summarize TotalTokens = sum(TotalTokens), InputCost = round(sum(InputCost), 4), OutputCost = round(sum(OutputCost), 4),
+            Cost = round(sum(Cost), 4), UnpricedCalls = countif(PriceMissing) by Day = bin(timestamp, 1d), Agent
+| order by Day desc, Cost desc

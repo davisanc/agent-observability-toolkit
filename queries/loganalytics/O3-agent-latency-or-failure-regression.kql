@@ -1,0 +1,19 @@
+// O3: Agent latency or failure regression
+// Fires when an agent's 95th percentile run time doubles, or its failure rate rises by 20 points, compared with the previous 24 hours.
+let runs =
+    AppDependencies
+    | where TimeGenerated > ago(25h)
+    | where tostring(Properties["gen_ai.operation.name"]) == "invoke_agent"
+    | project timestamp = TimeGenerated, Agent = coalesce(tostring(Properties["gen_ai.agent.name"]), AppRoleName),
+              DurationMs = todouble(DurationMs), Failed = (tobool(Success) == false);
+let current =
+    runs | where timestamp > ago(1h)
+    | summarize Runs = count(), Failures = countif(Failed), P95ms = percentile(DurationMs, 95) by Agent;
+let history =
+    runs | where timestamp <= ago(1h)
+    | summarize BaseP95ms = percentile(DurationMs, 95), BaseFailureRate = 1.0 * countif(Failed) / count() by Agent;
+current
+| join kind=inner history on Agent
+| extend FailureRate = round(1.0 * Failures / Runs, 2)
+| where Runs >= 5 and (P95ms > 2 * BaseP95ms or FailureRate > BaseFailureRate + 0.2)
+| project Agent, Runs, Failures, FailureRate, BaseFailureRate = round(BaseFailureRate, 2), P95ms = round(P95ms), BaseP95ms = round(BaseP95ms)

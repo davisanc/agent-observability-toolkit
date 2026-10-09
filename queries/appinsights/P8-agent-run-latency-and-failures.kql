@@ -1,0 +1,10 @@
+// P8: Agent run latency and failures
+// End-to-end invoke_agent spans: runs, failures and latency percentiles per agent and model.
+dependencies
+| where timestamp > ago(7d)
+| where tostring(customDimensions["gen_ai.operation.name"]) == "invoke_agent"
+| summarize Runs = count(), Failed = countif(tobool(success) == false),
+            P50ms = round(percentile(todouble(duration), 50)), P95ms = round(percentile(todouble(duration), 95))
+            by Agent = coalesce(tostring(customDimensions["gen_ai.agent.name"]), cloud_RoleName), Model = tostring(customDimensions["gen_ai.request.model"])
+| extend FailureRatePct = round(100.0 * Failed / Runs, 1)
+| order by Runs desc

@@ -1,0 +1,5 @@
+// T2: Tool usage per agent
+// For each agent, which tools it uses and how often. Shows what an agent really does compared with what it was designed to do.
+AgentToolCalls(7d)
+| summarize Calls = count(), Failures = countif(Succeeded == false), AvgMs = round(avg(DurationMs)) by Agent, Tool
+| order by Agent asc, Calls desc

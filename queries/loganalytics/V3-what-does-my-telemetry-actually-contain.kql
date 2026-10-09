@@ -1,0 +1,13 @@
+// V3: What does my telemetry actually contain?
+// For every agent and span type: how many spans carry prompt text, tool arguments, tool results and token counts. Use it to see which questions your current setup can answer, and which setting to change when one comes back as zero.
+AppDependencies
+| where TimeGenerated > ago(1d)
+| extend Op = tostring(Properties["gen_ai.operation.name"])
+| where isnotempty(Op)
+| summarize Spans = count(),
+            WithPromptText  = countif(isnotempty(tostring(Properties["gen_ai.input.messages"]))),
+            WithToolArgs    = countif(isnotempty(tostring(Properties["gen_ai.tool.call.arguments"]))),
+            WithToolResult  = countif(isnotempty(tostring(Properties["gen_ai.tool.call.result"]))),
+            WithTokenCounts = countif(isnotempty(tostring(Properties["gen_ai.usage.input_tokens"])))
+            by Agent = coalesce(tostring(Properties["gen_ai.agent.name"]), AppRoleName), Op
+| order by Agent asc, Op asc

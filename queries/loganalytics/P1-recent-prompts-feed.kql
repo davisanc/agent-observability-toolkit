@@ -1,0 +1,7 @@
+// P1: Recent prompts feed
+// The latest prompts across every agent: who asked what, through which channel. The simplest answer to 'what are people asking our agents?'.
+AgentTraces(1d)
+| where Direction == "Prompt"
+| project timestamp, Source, Agent, User, Channel, ConversationId, Prompt = Text
+| order by timestamp desc
+| take 200

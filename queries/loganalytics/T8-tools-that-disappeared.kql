@@ -1,0 +1,6 @@
+// T8: Tools that disappeared
+// Tools used in the last 30 days but not in the last 2 days. A tool that stops being called after a change usually means a broken connector or a changed agent.
+AgentToolCalls(30d)
+| summarize FirstSeen = min(timestamp), LastSeen = max(timestamp), Calls = count() by Agent, Tool
+| where LastSeen < ago(2d)
+| order by LastSeen desc

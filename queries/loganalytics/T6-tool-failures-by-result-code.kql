@@ -1,0 +1,6 @@
+// T6: Tool failures by result code
+// Only failed calls, grouped by tool and result code, with an example of the returned error text.
+AgentToolCalls(7d)
+| where Succeeded == false
+| summarize Failures = count(), LastSeen = max(timestamp), ExampleResult = take_any(substring(Result, 0, 200)) by Agent, Tool, ResultCode
+| order by Failures desc

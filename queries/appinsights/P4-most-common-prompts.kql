@@ -1,0 +1,7 @@
+// P4: Most common prompts
+// Groups near-identical prompts (case and spacing ignored, first 200 characters) to show what users really ask for. Good input for agent design: frequent questions deserve a dedicated topic or tool.
+AgentTraces(30d)
+| where Direction == "Prompt"
+| extend Normalized = trim(@"\s+", tolower(substring(Text, 0, 200)))
+| summarize Count = count(), Users = dcount(User), Agents = make_set(Agent, 5), LastSeen = max(timestamp) by Normalized
+| top 50 by Count desc

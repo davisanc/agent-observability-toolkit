@@ -1,0 +1,7 @@
+// T1: Which tools do my agents call?
+// Every tool ranked by use: calls, how many agents and users rely on it, failure rate and latency.
+AgentToolCalls(7d)
+| summarize Calls = count(), Agents = dcount(Agent), Users = dcount(User), Failures = countif(Succeeded == false),
+            P50ms = round(percentile(DurationMs, 50)), P95ms = round(percentile(DurationMs, 95)) by Tool, ToolType
+| extend FailureRatePct = round(100.0 * Failures / Calls, 1)
+| order by Calls desc

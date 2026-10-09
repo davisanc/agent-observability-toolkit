@@ -1,0 +1,7 @@
+// T7: Tool calls per prompt
+// How many tool calls it takes to answer one prompt, per agent. A rising average points to inefficient plans, retries or loops, and every extra call adds model tokens.
+AgentToolCalls(7d)
+| summarize ToolCalls = count(), DistinctTools = dcount(Tool) by Agent, OperationId
+| summarize Prompts = count(), AvgToolCalls = round(avg(ToolCalls), 1), P95ToolCalls = percentile(ToolCalls, 95),
+            MaxToolCalls = max(ToolCalls), AvgDistinctTools = round(avg(DistinctTools), 1) by Agent
+| order by AvgToolCalls desc

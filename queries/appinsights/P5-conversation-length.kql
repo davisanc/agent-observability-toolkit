@@ -1,0 +1,8 @@
+// P5: Conversation length
+// How many prompts a conversation takes and how long it lasts, per agent. Long conversations often mean the agent is not resolving the request on the first answer.
+AgentTraces(14d)
+| summarize Turns = countif(Direction == "Prompt"), StartTime = min(timestamp), EndTime = max(timestamp) by Agent, ConversationId
+| extend DurationMin = round((EndTime - StartTime) / 1m, 1)
+| summarize Conversations = count(), AvgTurns = round(avg(Turns), 1), P95Turns = percentile(Turns, 95), MaxTurns = max(Turns),
+            MedianMinutes = round(percentile(DurationMin, 50), 1), P95Minutes = round(percentile(DurationMin, 95), 1) by Agent
+| order by Conversations desc

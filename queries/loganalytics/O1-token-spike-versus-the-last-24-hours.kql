@@ -1,0 +1,9 @@
+// O1: Token spike versus the last 24 hours
+// Fires when an agent used more than three times its normal hourly tokens in the last hour. Catches loops, prompt bloat after a change, or a sudden traffic burst.
+let spikeFactor = 3.0;
+let minTokens = 50000;     // ignore small agents
+let data = AgentTokens(25h) | extend LastHour = timestamp > ago(1h);
+data
+| summarize LastHourTokens = sumif(TotalTokens, LastHour), BaselineHourlyAvg = round(sumif(TotalTokens, not(LastHour)) / 24.0)
+            by Agent
+| where LastHourTokens > minTokens and LastHourTokens > spikeFactor * BaselineHourlyAvg

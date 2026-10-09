@@ -1,0 +1,18 @@
+let AgentToolCalls = (lookback:timespan) {
+    dependencies
+    | where timestamp > ago(lookback)
+    | where tostring(customDimensions["gen_ai.operation.name"]) == "execute_tool"
+    | project
+        timestamp      = timestamp,
+        Agent          = coalesce(tostring(customDimensions["gen_ai.agent.name"]), cloud_RoleName),
+        Tool           = coalesce(tostring(customDimensions["gen_ai.tool.name"]), name),
+        ToolType       = tostring(customDimensions["gen_ai.tool.type"]),
+        Arguments      = tostring(customDimensions["gen_ai.tool.call.arguments"]),
+        Result         = tostring(customDimensions["gen_ai.tool.call.result"]),
+        Succeeded      = tobool(success),
+        DurationMs     = todouble(duration),
+        ResultCode     = tostring(resultCode),
+        ConversationId = coalesce(tostring(customDimensions["gen_ai.conversation.id"]), operation_Id),
+        User           = coalesce(tostring(customDimensions["user.email"]), tostring(customDimensions["enduser.id"]), user_AuthenticatedId, user_Id),
+        OperationId    = operation_Id
+};

@@ -1,0 +1,13 @@
+// O4: Tool failure spike
+// Fires when a tool's failure rate in the last hour is 20 points above its previous 24 hours and it failed at least 5 times. Usually a broken connector, expired credential or changed API.
+let current =
+    AgentToolCalls(25h) | where timestamp > ago(1h)
+    | summarize Calls = count(), Failures = countif(Succeeded == false), ExampleResult = take_any(substring(Result, 0, 200)) by Agent, Tool;
+let history =
+    AgentToolCalls(25h) | where timestamp <= ago(1h)
+    | summarize BaseFailureRate = 1.0 * countif(Succeeded == false) / count() by Agent, Tool;
+current
+| join kind=leftouter history on Agent, Tool
+| extend FailureRate = round(1.0 * Failures / Calls, 2), BaseFailureRate = round(coalesce(BaseFailureRate, 0.0), 2)
+| where Failures >= 5 and FailureRate > BaseFailureRate + 0.2
+| project Agent, Tool, Calls, Failures, FailureRate, BaseFailureRate, ExampleResult

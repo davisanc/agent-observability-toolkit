@@ -1,0 +1,16 @@
+// K4: Most expensive prompts
+// The 25 prompts that consumed the most tokens, with the prompt text, so you can see which kinds of requests are driving cost.
+let spend =
+    AgentCost(7d)
+    | summarize Tokens = sum(TotalTokens), InputTokens = sum(InputTokens), OutputTokens = sum(OutputTokens),
+                Cost = round(sum(Cost), 5), ModelCalls = count(), Models = make_set(Model, 5) by OperationId;
+let asked =
+    AgentTraces(7d)
+    | where Direction == "Prompt"
+    | extend Prompt = substring(Text, 0, 300)
+    | summarize arg_max(timestamp, Agent, User, ConversationId, Prompt) by OperationId;
+spend
+| join kind=inner asked on OperationId
+| project timestamp, Agent, User, ConversationId, Prompt, Tokens, InputTokens, OutputTokens, Cost, ModelCalls, Models
+| order by Cost desc, Tokens desc
+| take 25

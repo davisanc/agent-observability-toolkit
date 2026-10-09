@@ -1,0 +1,13 @@
+// P2: Full conversation transcript: prompts, responses, tool calls and model calls
+// Paste a ConversationId and read the whole exchange in order: what the user asked, each tool the agent called (with the first 500 characters of arguments), each model call with its token counts, and the answer.
+let convId = "<paste ConversationId>";
+union
+    (AgentTraces(7d)    | where ConversationId == convId
+                        | project timestamp, Kind = Direction, Agent, User, Detail = Text),
+    (AgentToolCalls(7d) | where ConversationId == convId
+                        | project timestamp, Kind = "Tool", Agent, User,
+                                  Detail = strcat(Tool, " | args: ", substring(Arguments, 0, 500), " | succeeded: ", tostring(Succeeded))),
+    (AgentTokens(7d)    | where ConversationId == convId
+                        | project timestamp, Kind = "Model call", Agent, User,
+                                  Detail = strcat(Model, " | in: ", tostring(InputTokens), " | out: ", tostring(OutputTokens), " | ", tostring(round(DurationMs)), " ms"))
+| order by timestamp asc

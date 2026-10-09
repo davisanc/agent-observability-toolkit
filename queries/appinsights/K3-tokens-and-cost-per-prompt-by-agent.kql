@@ -1,0 +1,7 @@
+// K3: Tokens and cost per prompt, by agent
+// What a single prompt costs on average and at the 95th percentile, and how many model calls it takes. A prompt here is one trace (OperationId), including all model calls the agent makes while answering it.
+AgentCost(7d)
+| summarize Tokens = sum(TotalTokens), Cost = sum(Cost), ModelCalls = count() by Agent, OperationId
+| summarize Prompts = count(), AvgTokens = round(avg(Tokens)), P95Tokens = round(percentile(Tokens, 95)),
+            AvgCost = round(avg(Cost), 5), P95Cost = round(percentile(Cost, 95), 5), AvgModelCalls = round(avg(ModelCalls), 1) by Agent
+| order by AvgCost desc, AvgTokens desc

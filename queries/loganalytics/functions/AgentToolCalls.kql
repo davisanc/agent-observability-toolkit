@@ -1,0 +1,18 @@
+let AgentToolCalls = (lookback:timespan) {
+    AppDependencies
+    | where TimeGenerated > ago(lookback)
+    | where tostring(Properties["gen_ai.operation.name"]) == "execute_tool"
+    | project
+        timestamp      = TimeGenerated,
+        Agent          = coalesce(tostring(Properties["gen_ai.agent.name"]), AppRoleName),
+        Tool           = coalesce(tostring(Properties["gen_ai.tool.name"]), Name),
+        ToolType       = tostring(Properties["gen_ai.tool.type"]),
+        Arguments      = tostring(Properties["gen_ai.tool.call.arguments"]),
+        Result         = tostring(Properties["gen_ai.tool.call.result"]),
+        Succeeded      = tobool(Success),
+        DurationMs     = todouble(DurationMs),
+        ResultCode     = tostring(ResultCode),
+        ConversationId = coalesce(tostring(Properties["gen_ai.conversation.id"]), OperationId),
+        User           = coalesce(tostring(Properties["user.email"]), tostring(Properties["enduser.id"]), UserAuthenticatedId, UserId),
+        OperationId    = OperationId
+};

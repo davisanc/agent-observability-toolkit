@@ -1,0 +1,18 @@
+let AgentCost = (lookback:timespan) {
+    // EDIT THIS TABLE: US dollars per 1,000,000 tokens, copied from your own price card or contract.
+    // ModelKey is the model name without the trailing date, e.g. gpt-4o-2024-08-06 is matched as gpt-4o.
+    // Run query K8 to see the exact model names in your telemetry.
+    let prices = datatable(ModelKey:string, InputPer1M:real, OutputPer1M:real) [
+        "gpt-4o",      0.0, 0.0,
+        "gpt-4o-mini", 0.0, 0.0,
+        "gpt-4.1",     0.0, 0.0
+    ];
+    AgentTokens(lookback)
+    | extend ModelKey = replace_regex(Model, @"-\d{4}-\d{2}-\d{2}$", "")
+    | lookup kind=leftouter prices on ModelKey
+    | extend PriceMissing = isnull(InputPer1M)
+    | extend InputCost  = round(InputTokens  / 1000000.0 * coalesce(InputPer1M, 0.0), 6),
+             OutputCost = round(OutputTokens / 1000000.0 * coalesce(OutputPer1M, 0.0), 6)
+    | extend Cost = InputCost + OutputCost
+    | project-away InputPer1M, OutputPer1M
+};

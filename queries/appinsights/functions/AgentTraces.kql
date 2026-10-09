@@ -1,0 +1,60 @@
+let AgentTraces = (lookback:timespan) {
+    // Operations that carry prompt / response text. Add "chat" if your framework only emits model-call spans.
+    let traceOps = dynamic(["invoke_agent", "output_messages"]);
+    // cloud_RoleName values of agents YOU host on Web Apps / Containers (everything else with gen_ai spans is labelled Foundry)
+    let customAgentRoles = dynamic(["my-custom-agent-app"]);
+    // ---------- Copilot Studio, agent-level telemetry: one row per message ----------
+    let csLegacy =
+        customEvents
+        | where timestamp > ago(lookback)
+        | where name in ("BotMessageReceived", "BotMessageSend")
+        | project
+            timestamp      = timestamp,
+            Source         = "Copilot Studio",
+            Agent          = cloud_RoleInstance,
+            Direction      = iff(name == "BotMessageReceived", "Prompt", "Response"),
+            Text           = tostring(customDimensions.text),
+            ConversationId = tostring(customDimensions.conversationId),
+            Channel        = tostring(customDimensions.channelId),
+            Model          = "",
+            User           = coalesce(tostring(customDimensions.fromName), tostring(customDimensions.fromId), user_Id),
+            OperationId    = operation_Id;
+    // ---------- GenAI OpenTelemetry spans: Copilot Studio (environment-level), Foundry, custom agents ----------
+    let genAi =
+        dependencies
+        | where timestamp > ago(lookback)
+        | extend Op = tostring(customDimensions["gen_ai.operation.name"])
+        | where Op in (traceOps)
+        | extend inMsgs  = todynamic(tostring(customDimensions["gen_ai.input.messages"])),
+                 outMsgs = todynamic(tostring(customDimensions["gen_ai.output.messages"]))
+        | extend lastIn   = inMsgs[array_length(inMsgs) - 1],
+                 firstOut = outMsgs[0]
+        | extend PromptText = coalesce(
+                     tostring(lastIn.parts[0].content),                    // semconv: parts[].content
+                     tostring(lastIn.content),                             // flat {role, content}
+                     tostring(customDimensions["gen_ai.prompt"]),                 // older semconv
+                     tostring(customDimensions["gen_ai.input.messages"])),        // raw fallback
+                 ResponseText = coalesce(
+                     tostring(firstOut.parts[0].content),
+                     tostring(firstOut.content),
+                     tostring(customDimensions["gen_ai.completion"]),
+                     tostring(customDimensions["gen_ai.output.messages"]))
+        | extend rows = pack_array(
+                     bag_pack("Direction", "Prompt",   "Text", PromptText),
+                     bag_pack("Direction", "Response", "Text", ResponseText))
+        | mv-expand rows
+        | project
+            timestamp      = timestamp,
+            Source         = iff(isnotempty(tostring(customDimensions["microsoft.channel.name"])), "Copilot Studio",
+                                 iff(cloud_RoleName in (customAgentRoles), "Custom", "Foundry")),
+            Agent          = coalesce(tostring(customDimensions["gen_ai.agent.name"]), cloud_RoleName),
+            Direction      = tostring(rows.Direction),
+            Text           = tostring(rows.Text),
+            ConversationId = coalesce(tostring(customDimensions["gen_ai.conversation.id"]), operation_Id),
+            Channel        = coalesce(tostring(customDimensions["microsoft.channel.name"]), Op),
+            Model          = tostring(customDimensions["gen_ai.request.model"]),
+            User           = coalesce(tostring(customDimensions["user.email"]), tostring(customDimensions["enduser.id"]), user_AuthenticatedId, user_Id),
+            OperationId    = operation_Id;
+    union csLegacy, genAi
+    | where isnotempty(Text)
+};

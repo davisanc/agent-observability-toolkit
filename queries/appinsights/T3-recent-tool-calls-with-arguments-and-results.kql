@@ -1,0 +1,7 @@
+// T3: Recent tool calls with arguments and results
+// A live feed of what agents called and with what: the first 300 characters of arguments and results.
+AgentToolCalls(1d)
+| project timestamp, Agent, Tool, ToolType, Arguments = substring(Arguments, 0, 300), Result = substring(Result, 0, 300),
+          Succeeded, DurationMs = round(DurationMs), User, ConversationId
+| order by timestamp desc
+| take 200

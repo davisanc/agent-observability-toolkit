@@ -1,0 +1,8 @@
+// K9: Week-over-week change
+// Tokens and cost for the last 7 days against the 7 days before, per agent. Spot an agent whose consumption is climbing before the invoice does.
+AgentCost(14d)
+| extend Recent = timestamp > ago(7d)
+| summarize TokensLast7d = sumif(TotalTokens, Recent), TokensPrior7d = sumif(TotalTokens, not(Recent)),
+            CostLast7d = round(sumif(Cost, Recent), 4), CostPrior7d = round(sumif(Cost, not(Recent)), 4) by Agent
+| extend TokenChangePct = iff(TokensPrior7d == 0, real(null), round(100.0 * (TokensLast7d - TokensPrior7d) / TokensPrior7d, 1))
+| order by TokensLast7d desc

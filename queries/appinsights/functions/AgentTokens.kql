@@ -1,0 +1,27 @@
+let AgentTokens = (lookback:timespan) {
+    // Which span type carries token usage in your stack.
+    //   "chat"         = one span per model call (Foundry, Semantic Kernel, most frameworks)
+    //   "invoke_agent" = use this instead if usage is only reported on the agent run span
+    // Never list both: a parent span and its child spans can report the same tokens and you would double count.
+    let tokenOps = dynamic(["chat"]);
+    dependencies
+    | where timestamp > ago(lookback)
+    | extend Op = tostring(customDimensions["gen_ai.operation.name"])
+    | where Op in (tokenOps)
+    | extend InTok  = tolong(customDimensions["gen_ai.usage.input_tokens"]),
+             OutTok = tolong(customDimensions["gen_ai.usage.output_tokens"])
+    | where isnotnull(InTok) or isnotnull(OutTok)
+    | project
+        timestamp      = timestamp,
+        Agent          = coalesce(tostring(customDimensions["gen_ai.agent.name"]), cloud_RoleName),
+        Model          = coalesce(tostring(customDimensions["gen_ai.response.model"]), tostring(customDimensions["gen_ai.request.model"])),
+        Operation      = Op,
+        InputTokens    = coalesce(InTok, long(0)),
+        OutputTokens   = coalesce(OutTok, long(0)),
+        TotalTokens    = coalesce(InTok, long(0)) + coalesce(OutTok, long(0)),
+        DurationMs     = todouble(duration),
+        Succeeded      = tobool(success),
+        ConversationId = coalesce(tostring(customDimensions["gen_ai.conversation.id"]), operation_Id),
+        User           = coalesce(tostring(customDimensions["user.email"]), tostring(customDimensions["enduser.id"]), user_AuthenticatedId, user_Id),
+        OperationId    = operation_Id
+};

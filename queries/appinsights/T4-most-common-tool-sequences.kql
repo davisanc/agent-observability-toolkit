@@ -1,0 +1,8 @@
+// T4: Most common tool sequences
+// The order in which tools are called within one turn, counted per agent. Reveals the real workflow, repeated retries and tools that are always called together.
+AgentToolCalls(7d)
+| order by timestamp asc
+| summarize Tools = make_list(Tool, 50) by Agent, OperationId
+| extend Sequence = strcat_array(Tools, " > ")
+| summarize Turns = count() by Agent, Sequence
+| top 30 by Turns desc

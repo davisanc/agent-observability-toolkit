@@ -1,0 +1,7 @@
+// O5: Runaway turn: too many tool calls in one prompt
+// Fires when a single prompt triggers more than 50 tool calls. Almost always a planning loop, and each call burns tokens.
+let maxToolCallsPerPrompt = 50;
+AgentToolCalls(1h)
+| summarize ToolCalls = count(), DistinctTools = dcount(Tool), Tools = make_set(Tool, 10), FirstSeen = min(timestamp)
+            by Agent, User, ConversationId, OperationId
+| where ToolCalls > maxToolCallsPerPrompt

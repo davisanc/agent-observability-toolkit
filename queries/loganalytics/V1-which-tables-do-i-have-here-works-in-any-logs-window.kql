@@ -1,0 +1,5 @@
+// V1: Which tables do I have here? (works in any Logs window)
+// Run this before anything else. It names all four possible tables and silently skips the ones that do not exist in the window you are in, so it never fails with an unresolved-table error. The result tells you which table-name switch to use.
+union isfuzzy=true customEvents, dependencies, AppEvents, AppDependencies
+| summarize Rows = count() by Table = $table
+| order by Table asc

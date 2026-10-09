@@ -1,0 +1,6 @@
+// P6: Prompt and response size
+// Character length of prompts and responses per agent. Very long prompts are the first suspect when token cost is higher than expected.
+AgentTraces(7d)
+| extend Chars = strlen(Text)
+| summarize Messages = count(), AvgChars = round(avg(Chars)), P95Chars = round(percentile(Chars, 95)), MaxChars = max(Chars) by Agent, Direction
+| order by Agent asc, Direction asc

@@ -1,0 +1,7 @@
+// K6: Tokens and cost per user
+// Which users generate the most usage, with tokens per prompt. Use it for chargeback conversations and to find heavy or automated use.
+AgentCost(30d)
+| summarize Tokens = sum(TotalTokens), Cost = round(sum(Cost), 4), Prompts = dcount(OperationId), Agents = make_set(Agent, 5) by User
+| extend TokensPerPrompt = round(1.0 * Tokens / Prompts)
+| order by Cost desc, Tokens desc
+| take 50

@@ -1,0 +1,6 @@
+// K8: Model mix and the exact model names to price
+// Which models are used, by how many agents, and the exact name strings in your telemetry. Copy the names (without the date suffix) into the price table in AgentCost.
+AgentTokens(30d)
+| extend ModelKey = replace_regex(Model, @"-\d{4}-\d{2}-\d{2}$", "")
+| summarize ModelCalls = count(), Agents = dcount(Agent), TotalTokens = sum(TotalTokens), RawNames = make_set(Model, 5) by ModelKey
+| order by TotalTokens desc

@@ -1,0 +1,7 @@
+// O2: Daily token or cost budget exceeded
+// Fires when an agent passes a rolling 24-hour budget. Set either or both budgets. Without prices filled in, use the token budget.
+let dailyCostBudgetUsd = 50.0;
+let dailyTokenBudget = 5000000;
+AgentCost(1d)
+| summarize Tokens = sum(TotalTokens), Cost = round(sum(Cost), 2), ModelCalls = count() by Agent
+| where Cost > dailyCostBudgetUsd or Tokens > dailyTokenBudget

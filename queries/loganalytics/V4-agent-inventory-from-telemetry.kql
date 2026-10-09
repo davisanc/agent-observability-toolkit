@@ -1,0 +1,7 @@
+// V4: Agent inventory from telemetry
+// Every agent that produced telemetry in 30 days, when it was last seen and how busy it is. Compare against your Agent 365 registry to find agents that exist but are not observed.
+AgentTraces(30d)
+| summarize FirstSeen = min(timestamp), LastSeen = max(timestamp),
+            Conversations = dcount(ConversationId), Prompts = countif(Direction == "Prompt"),
+            Users = dcount(User) by Source, Agent
+| order by LastSeen desc

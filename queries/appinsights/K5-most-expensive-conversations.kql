@@ -1,0 +1,7 @@
+// K5: Most expensive conversations
+// Conversations ranked by total tokens and cost, with the number of turns and models used.
+AgentCost(7d)
+| summarize Tokens = sum(TotalTokens), Cost = round(sum(Cost), 5), ModelCalls = count(), Turns = dcount(OperationId),
+            Models = make_set(Model, 5), Start = min(timestamp), End = max(timestamp) by Agent, User, ConversationId
+| order by Cost desc, Tokens desc
+| take 25

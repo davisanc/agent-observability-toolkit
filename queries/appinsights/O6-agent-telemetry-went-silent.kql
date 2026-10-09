@@ -1,0 +1,8 @@
+// O6: Agent telemetry went silent
+// Fires for agents that produced GenAI spans in the previous 24-48 hours but nothing in the last 24 hours. Catches a broken telemetry connection or an agent that stopped being used.
+dependencies
+| where timestamp > ago(2d)
+| extend Op = tostring(customDimensions["gen_ai.operation.name"])
+| where isnotempty(Op)
+| summarize LastSeen = max(timestamp), Spans = count() by Agent = coalesce(tostring(customDimensions["gen_ai.agent.name"]), cloud_RoleName)
+| where LastSeen < ago(24h)

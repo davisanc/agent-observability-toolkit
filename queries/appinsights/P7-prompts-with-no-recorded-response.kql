@@ -1,0 +1,8 @@
+// P7: Prompts with no recorded response
+// Turns where a prompt was recorded but no response was. Candidates for crashes, timeouts or content that was not captured.
+AgentTraces(1d)
+| summarize Prompts = countif(Direction == "Prompt"), Responses = countif(Direction == "Response"),
+            FirstSeen = min(timestamp), Prompt = take_any(iff(Direction == "Prompt", Text, "")) by Source, Agent, User, ConversationId, OperationId
+| where Prompts > 0 and Responses == 0
+| order by FirstSeen desc
+| take 200

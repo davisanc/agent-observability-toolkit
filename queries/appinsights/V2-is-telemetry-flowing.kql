@@ -1,0 +1,8 @@
+// V2: Is telemetry flowing?
+// Which event names and GenAI operations arrived in the last hour, so you know which of the queries below can return data for you.
+union customEvents, dependencies
+| where timestamp > ago(1h)
+| extend Op = tostring(customDimensions["gen_ai.operation.name"])
+| where name startswith "Bot" or isnotempty(Op)
+| summarize Records = count(), Agents = dcount(coalesce(tostring(customDimensions["gen_ai.agent.name"]), cloud_RoleName)) by Table = $table, EventName = name, Op
+| order by Records desc

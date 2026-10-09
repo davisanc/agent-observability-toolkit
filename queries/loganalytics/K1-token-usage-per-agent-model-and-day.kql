@@ -1,0 +1,6 @@
+// K1: Token usage per agent, model and day
+// Input and output tokens, model calls and average call latency. This is the base view for every cost conversation.
+AgentTokens(30d)
+| summarize ModelCalls = count(), InputTokens = sum(InputTokens), OutputTokens = sum(OutputTokens), TotalTokens = sum(TotalTokens),
+            AvgMs = round(avg(DurationMs)) by Day = bin(timestamp, 1d), Agent, Model
+| order by Day desc, TotalTokens desc
